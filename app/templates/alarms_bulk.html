@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Групповая авария — Веб отчетность{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Групповое заведение аварий</h1>
+  <a class="btn small" href="{{ url_for('alarms') }}">← Одиночная авария</a>
+</div>
+<p class="muted">Отключили свет в районе/городе или лёг целый ТЦ? Отфильтруйте станции, отметьте
+нужные и заведите <b>одну аварию сразу на все</b>. Адрес, направление, ТЦ, тип сети и
+оборудование подставятся из справочника по каждой станции.</p>
+
+<form method="get" class="card filter">
+  <label>Направление
+    <select name="f_napr" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      {% for v in c.NAPR %}<option value="{{ v }}" {{ 'selected' if f.f_napr == v }}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>ТЦ
+    <select name="f_tehc" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      {% for v in c.TC %}<option value="{{ v }}" {{ 'selected' if f.f_tehc == v }}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="grow">Поиск по коду/адресу (город, улица) <input type="search" name="f_q" value="{{ f.f_q }}" placeholder="например, Сургут"></label>
+  <button class="btn primary" type="submit">Показать станции</button>
+</form>
+
+<form method="post" id="bulk-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <input type="hidden" name="do" value="create">
+
+  <h2>Станции <span class="badge" id="sel-count">0</span> из {{ stations|length }}</h2>
+  {% if stations %}
+  <div class="bulk-tools">
+    <button type="button" class="btn small" id="sel-all">Выбрать все</button>
+    <button type="button" class="btn small" id="sel-none">Снять все</button>
+    <span class="muted">Отмеченные станции получат аварию.</span>
+  </div>
+  <div class="table-wrap bulk-list">
+    <table>
+      <thead><tr><th style="width:36px"><input type="checkbox" id="check-all" checked></th><th>Код БС</th><th>Адрес</th><th>Напр.</th><th>ТЦ</th><th>Сеть</th></tr></thead>
+      <tbody>
+      {% for s in stations %}
+        <tr>
+          <td><input type="checkbox" class="st-check" name="codes" value="{{ s.CODE }}" checked></td>
+          <td class="nw"><b>{{ s.CODE }}</b></td>
+          <td>{{ s.ADDR }}</td>
+          <td>{{ s.NAPR }}</td>
+          <td>{{ s.TEHC }}</td>
+          <td>{{ s.NETW_TYPE }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card empty">Станции не найдены. Измените фильтр выше (или справочник БС пуст).</div>
+  {% endif %}
+
+  {% if stations %}
+  <h2>Общие параметры аварии</h2>
+  <section class="panel sec-1">
+    <div class="grid">
+      <label>Тип аварии<span class="req">*</span>
+        <select name="ALARM_TYPE" required>
+          <option value="">— выберите —</option>
+          {% for v in c.ATYPE %}<option value="{{ v }}" {{ 'selected' if form.get('ALARM_TYPE') == v else ('selected' if v == 'ЭЛ' and not form) }}>{{ v }}</option>{% endfor %}
+        </select>
+        <small>Для отключения света — «ЭЛ»</small>
+      </label>
+      <label>Категория<span class="req">*</span>
+        <select name="KATEG" required>
+          <option value="">— выберите —</option>
+          {% for v in c.KATEG %}<option value="{{ v }}" {{ 'selected' if (form.get('KATEG')|string) == (v|string) }}>{{ v }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Количество БС на станцию
+        <input name="NUMB_RBS" value="{{ form.get('NUMB_RBS','1') }}" pattern="^([1-9][0-9]{0,3}|10000|[СсCc])$" title="Число 1–10000 или С">
+        <small>Обычно 1 (вся станция) или «С» — сектор</small>
+      </label>
+      <label>Начало<span class="req">*</span>
+        <input type="datetime-local" step="1" name="BEGIN_TIME" id="b_begin" value="{{ form.get('BEGIN_TIME','') }}" required>
+      </label>
+      <label>Окончание
+        <input type="datetime-local" step="1" name="END_TIME" id="b_end" value="{{ form.get('END_TIME','') }}">
+        <span class="check"><input type="checkbox" name="END_NOW" id="b_now" value="1" {{ 'checked' if form.get('END_NOW') == '1' or not form }}> НВ — продолжается</span>
+      </label>
+      <label>Время перерыва связи (1 БС)
+        <input name="PROSTOY" value="{{ form.get('PROSTOY','') }}" placeholder="чч.мм.сс">
+      </label>
+      <label>АКБ
+        <input name="AKB" value="{{ form.get('AKB','') }}" placeholder="чч.мм.сс">
+      </label>
+      <label>ГУ
+        <input name="DGU" value="{{ form.get('DGU','') }}" placeholder="чч.мм.сс">
+      </label>
+      <label class="w2">PW/NTT (одна заявка на все, необязательно)
+        <input name="PW" value="{{ form.get('PW','') }}" maxlength="450" placeholder="Ссылка на заявку в CRM">
+      </label>
+      <label class="w2">Описание (кратко)
+        <input name="DESCR" value="{{ form.get('DESCR','') }}" maxlength="450" placeholder="Напр.: отключение внешнего электроснабжения">
+      </label>
+      <label class="w2">Уведомление об аварии (Кому)
+        <textarea name="ALARM_WHO" rows="2" maxlength="450">{{ form.get('ALARM_WHO','') }}</textarea>
+      </label>
+      <label class="w2">Подробное описание
+        <textarea name="DESC_NOTICE" rows="2" maxlength="450">{{ form.get('DESC_NOTICE','') }}</textarea>
+      </label>
+    </div>
+  </section>
+
+  <div class="savebar">
+    <span class="muted">Будет создано аварий: <b id="sel-count2">0</b></span>
+    <button class="btn primary" type="submit" id="bulk-submit">Завести аварии на выбранные станции</button>
+  </div>
+  {% endif %}
+</form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.getElementById('bulk-form');
+  if (!form) return;
+  var checks = form.querySelectorAll('.st-check');
+  var all = document.getElementById('check-all');
+  var c1 = document.getElementById('sel-count'), c2 = document.getElementById('sel-count2');
+  var submit = document.getElementById('bulk-submit');
+
+  function count() {
+    var n = 0;
+    for (var i = 0; i < checks.length; i++) if (checks[i].checked) n++;
+    if (c1) c1.textContent = n;
+    if (c2) c2.textContent = n;
+    if (submit) submit.disabled = (n === 0);
+    if (all) all.checked = (n === checks.length && n > 0);
+  }
+  function setAll(v) { for (var i = 0; i < checks.length; i++) checks[i].checked = v; count(); }
+
+  for (var i = 0; i < checks.length; i++) checks[i].addEventListener('change', count);
+  if (all) all.addEventListener('change', function () { setAll(all.checked); });
+  var sa = document.getElementById('sel-all'), sn = document.getElementById('sel-none');
+  if (sa) sa.addEventListener('click', function () { setAll(true); });
+  if (sn) sn.addEventListener('click', function () { setAll(false); });
+
+  // Начало по умолчанию = сейчас; «НВ» выключает поле окончания
+  var begin = document.getElementById('b_begin'), end = document.getElementById('b_end'), now = document.getElementById('b_now');
+  function pad(n){ return (n<10?'0':'')+n; }
+  if (begin && !begin.value) {
+    var d = new Date();
+    begin.value = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  }
+  function syncEnd(){ if (end && now){ end.disabled = now.checked; if (now.checked) end.value=''; } }
+  if (now) now.addEventListener('change', syncEnd);
+  syncEnd();
+  count();
+})();
+</script>
+{% endblock %}

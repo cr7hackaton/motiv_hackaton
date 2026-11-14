@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Отчетность — Веб отчетность{% endblock %}
+{% macro fsel(name, label, values, filt) -%}
+<label>{{ label }}
+  <select name="{{ name }}" onchange="this.form.submit()">
+    <option value="">— все —</option>
+    {% for v in values %}<option value="{{ v }}" {{ 'selected' if (filt.get(name)|string) == (v|string) }}>{{ v }}</option>{% endfor %}
+  </select>
+</label>
+{%- endmacro %}
+{% block content %}
+<h1>Отчетность</h1>
+
+<form method="get" class="card filter">
+  <label>Период с <input type="date" name="from" value="{{ d_from }}"></label>
+  <label>по <input type="date" name="to" value="{{ d_to }}"></label>
+  {{ fsel('napr', 'Направление', c.NAPR, filt) }}
+  {{ fsel('tehc', 'ТЦ', c.TC, filt) }}
+  {{ fsel('kateg', 'Категория', c.KATEG, filt) }}
+  {{ fsel('netw', 'Тип сети', c.NETW, filt) }}
+  <label>Тип (проблема)
+    <select name="atype" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      {% for v in c.ATYPE %}<option value="{{ v }}" {{ 'selected' if filt.get('atype') == v and not filt.get('problem') }}>{{ v }} — {{ ATYPE_HINTS.get(v, '') }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Статус
+    <select name="status" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      <option value="open" {{ 'selected' if filt.get('status') == 'open' }}>Открытые (НВ)</option>
+      <option value="closed" {{ 'selected' if filt.get('status') == 'closed' }}>Закрытые</option>
+    </select>
+  </label>
+  <label class="grow">Поиск <input type="search" name="q" value="{{ filt.get('q','') }}" placeholder="адрес, PW, код БС, описание"></label>
+  <button class="btn primary" type="submit">Показать</button>
+</form>
+
+{% if can('report_export') or can('alarm_create') %}
+<div class="csv-actions">
+  {% if can('report_export') %}<a class="btn ghost" href="{{ url_for('reports_csv') }}?{{ csv_qs }}">↓ Выгрузить CSV</a>{% endif %}
+  {% if can('alarm_create') %}<a class="btn ghost" href="{{ url_for('import_csv') }}">↑ Импорт CSV</a>{% endif %}
+</div>
+{% endif %}
+
+<div class="chips-row">
+  <span class="templates-label">Быстрый период:</span>
+  {% for label, q, active in quick %}<a class="chip {{ 'on' if active }}" href="{{ url_for('reports') }}?{{ q }}">{{ label }}</a>{% endfor %}
+</div>
+<div class="chips-row">
+  <span class="templates-label">Проблема:</span>
+  {% for key, title, q in problems %}<a class="chip {{ 'on' if filt.get('problem') == key }}" href="{{ url_for('reports') }}?{{ q }}">{{ title }}</a>{% endfor %}
+  {% if filt %}<a class="chip clear" href="{{ url_for('reports') }}?{{ reset_qs }}">× Сбросить фильтры</a>{% endif %}
+</div>
+
+<div class="stats">
+  <div class="stat"><span>Событий по фильтру</span><b>{{ rows|length }}</b></div>
+  <div class="stat accent"><span>Открыто (НВ)</span><b>{{ open_count }}</b></div>
+  <div class="stat"><span>Затронуто БС (уникальных)</span><b>{{ stations_hit }}</b></div>
+  <div class="stat"><span>Суммарный простой БС</span><b>{{ total }}</b></div>
+</div>
+
+{% if rows %}
+<div class="table-wrap"><table class="report">
+  <thead><tr>
+    {% if can('alarm_edit') %}<th></th>{% endif %}
+    <th>ID</th><th>PW/NTT</th><th>БС</th><th>Направление</th><th>ТЦ</th><th>Кат.</th><th>Тип сети</th><th>Сетевой элемент, услуга</th>
+    <th>Кол-во БС</th><th>Тип оборуд.</th><th>Тип</th><th>Описание</th><th>Начало</th><th>Окончание</th><th>АКБ</th><th>ГУ</th>
+    <th>Длительность</th><th>Перерыв связи</th><th>Общий простой БС</th><th>Уведомление (Кому)</th><th>Подробное описание</th>
+  </tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr class="{{ 'open' if r.is_now }}">
+      {% if can('alarm_edit') %}<td class="nw">
+        <a class="btn small" href="{{ url_for('alarm_edit', alarm_id=r.ID, back=back) }}">Изменить</a>
+        {% if r.is_now %}<form method="post" action="{{ url_for('alarm_close', alarm_id=r.ID) }}" class="inline" onsubmit="return confirm('Закрыть аварию №{{ r.ID }} сейчас?')"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="back" value="{{ back }}"><button class="btn small close" type="submit">Закрыть</button></form>{% endif %}
+      </td>{% endif %}
+      <td>{{ r.ID }}</td>
+      <td class="pw">{% if r.PW.startswith('http') %}<a href="{{ r.PW }}" target="_blank" rel="noopener">{{ r.PW }}</a>{% else %}{{ r.PW }}{% endif %}</td>
+      <td class="nw">{% if r.STATION_CODE %}<a href="{{ url_for('station_card', code=r.STATION_CODE) }}">{{ r.STATION_CODE }}</a>{% endif %}</td>
+      <td>{{ r.NAPR }}</td><td>{{ r.TEHC }}</td><td><span class="badge k{{ r.KATEG }}">{{ r.KATEG }}</span></td><td>{{ r.NETW_TYPE }}</td><td>{{ r.SERV_ELEM }}{% if r.OBJ_TYPE and r.OBJ_TYPE != 'Базовая станция' %} <span class="badge obj">{{ r.OBJ_TYPE }}</span>{% endif %}</td>
+      <td class="num">{{ r.numb_txt }}</td><td>{{ r.EQIP_TYPE }}</td><td title="{{ ATYPE_HINTS.get(r.ALARM_TYPE, '') }}">{{ r.ALARM_TYPE }}</td><td>{{ r.DESCR }}</td>
+      <td class="nw">{{ r.begin_txt }}</td>
+      <td class="nw">{% if r.is_now %}<span class="badge now">НВ</span>{% else %}{{ r.end_txt }}{% endif %}</td>
+      <td class="num">{{ r.akb_txt }}</td><td class="num">{{ r.dgu_txt }}</td>
+      <td class="num">{{ r.length_txt }}</td><td class="num">{{ r.prostoy_txt }}</td><td class="num"><b>{{ r.common_txt }}</b></td>
+      <td>{{ r.ALARM_WHO }}</td><td>{{ r.DESC_NOTICE }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<div class="card empty">По выбранным условиям событий нет. Расширьте период или сбросьте фильтры.</div>{% endif %}
+{% endblock %}

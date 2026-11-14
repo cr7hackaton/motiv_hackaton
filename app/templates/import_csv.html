@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Импорт CSV — Веб отчетность{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Импорт аварий из CSV</h1>
+  <a class="btn small" href="{{ url_for('reports') }}">← К отчётности</a>
+</div>
+<p class="muted">Формат — как у выгрузки («Отчётность» → «Выгрузить CSV»): разделитель <b>;</b>,
+кодировка UTF-8, та же шапка столбцов. Столбец <b>Начало</b> обязателен; строки без него
+пропускаются. Поле ID при импорте игнорируется (назначается заново).</p>
+
+<form method="post" enctype="multipart/form-data" class="card import-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <label>Файл CSV
+    <input type="file" name="file" accept=".csv" required>
+  </label>
+
+  <div class="import-modes">
+    <label class="radio">
+      <input type="radio" name="mode" value="append" checked>
+      <span><b>Добавить</b> к существующим — дописать строки из файла к текущим авариям.</span>
+    </label>
+    {% if can('alarm_delete') %}
+    <label class="radio">
+      <input type="radio" name="mode" value="replace">
+      <span><b>Заменить всё</b> (начисто) — очистить таблицу аварий и загрузить только из файла. <b class="danger-text">Необратимо.</b></span>
+    </label>
+    {% else %}
+    <p class="muted">Режим «заменить всё» доступен администратору и владельцу.</p>
+    {% endif %}
+  </div>
+
+  <button class="btn primary" type="submit"
+    onclick="var m=this.form.mode.value; return m!=='replace' || confirm('Режим «заменить всё» удалит все текущие аварии и загрузит только из файла. Продолжить?');">
+    Загрузить
+  </button>
+</form>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_form.html" import alarm_form %}
+{% block title %}Аварии — Веб отчетность{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Новая авария</h1>
+  <div class="toolbar">
+    <a class="btn small primary" href="{{ url_for('alarms_bulk') }}" title="Одна авария сразу на много станций">⚡ Групповая авария</a>
+    <a class="btn small" href="{{ url_for('alarms_bulk_close') }}" title="Закрыть много открытых аварий разом">✓ Групповое закрытие</a>
+    <a class="btn small" href="{{ url_for('alarms', dup='last') }}" title="Заполнить поля из последней аварии">⧉ Дублировать последнюю</a>
+    <a class="btn small ghost" href="{{ url_for('guide') }}">? Памятка дежурного</a>
+  </div>
+</div>
+
+<div class="templates">
+  <span class="templates-label">Шаблоны:</span>
+  <button type="button" class="chip" data-tpl='{"ALARM_TYPE":"ЭЛ","KATEG":"2","DESCR":"Отключение внешнего электроснабжения (промсеть)"}'>Электросеть</button>
+  <button type="button" class="chip" data-tpl='{"ALARM_TYPE":"АВР","KATEG":"2","DESCR":"Сработал автоввод резерва, работа от АКБ/ГУ"}'>АВР (питание)</button>
+  <button type="button" class="chip" data-tpl='{"ALARM_TYPE":"РРС","KATEG":"2","DESCR":"Потеря радиорелейного пролёта"}'>РРС</button>
+  <button type="button" class="chip" data-tpl='{"ALARM_TYPE":"RBS","KATEG":"2","DESCR":"Отказ оборудования базовой станции"}'>Оборудование БС</button>
+</div>
+
+<form method="post" class="card alarm-form">
+  {{ alarm_form(c, form, 'Сохранить аварию') }}
+  <p class="muted hotkey-hint">Подсказка: <kbd>Ctrl</kbd>+<kbd>Enter</kbd> — сохранить.</p>
+</form>
+
+<h2>Открытые аварии <span class="badge now">{{ rows|length }}</span></h2>
+{% if rows %}
+<div class="table-wrap"><table>
+  <thead><tr>{% if can('alarm_edit') %}<th></th>{% endif %}<th>ID</th><th>PW/NTT</th><th>Направление</th><th>ТЦ</th><th>Кат.</th><th>Сеть</th><th>Сетевой элемент</th><th>БС</th><th>Тип</th><th>Начало</th><th>Длится</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr class="open">
+      {% if can('alarm_edit') %}<td class="nw">
+        <a class="btn small" href="{{ url_for('alarm_edit', alarm_id=r.ID, back=request.path) }}">Изменить</a>
+        <form method="post" action="{{ url_for('alarm_close', alarm_id=r.ID) }}" class="inline" onsubmit="return confirm('Закрыть аварию №{{ r.ID }} сейчас?')"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="back" value="{{ request.path }}"><button class="btn small close" type="submit">Закрыть</button></form>
+      </td>{% endif %}
+      <td>{{ r.ID }}</td><td class="pw">{{ r.PW }}</td><td>{{ r.NAPR }}</td><td>{{ r.TEHC }}</td><td><span class="badge k{{ r.KATEG }}">{{ r.KATEG }}</span></td>
+      <td>{{ r.NETW_TYPE }}</td><td>{{ r.SERV_ELEM }}</td><td class="num">{{ r.numb_txt }}</td><td>{{ r.ALARM_TYPE }}</td>
+      <td class="nw">{{ r.begin_txt }}</td><td class="num"><b>{{ r.length_txt }}</b></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<div class="card empty">Открытых аварий нет.</div>{% endif %}
+{% endblock %}

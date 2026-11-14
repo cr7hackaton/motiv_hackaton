@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}БС {{ code }} — история{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('stations') }}">← К справочнику станций</a></p>
+<h1>Станция {{ code }}</h1>
+{% if st %}
+<div class="card st-card">
+  <div><span class="muted">Адрес</span><b>{{ st.ADDR }}</b></div>
+  <div><span class="muted">Направление</span><b>{{ st.NAPR }}</b></div>
+  <div><span class="muted">ТЦ</span><b>{{ st.TEHC }}</b></div>
+  <div><span class="muted">Тип сети</span><b>{{ st.NETW_TYPE }}</b></div>
+  <div><span class="muted">Оборудование</span><b>{{ st.EQIP_TYPE }}</b></div>
+</div>
+{% else %}
+<div class="card"><p class="muted">Станции с таким кодом нет в справочнике — показаны аварии, где код встречается в поле «Сетевой элемент».</p></div>
+{% endif %}
+
+<div class="stats">
+  <div class="stat"><span>Всего аварий</span><b>{{ rows|length }}</b></div>
+  <div class="stat accent"><span>Открыто (НВ)</span><b>{{ open_n }}</b></div>
+  <div class="stat"><span>Суммарный простой БС</span><b>{{ total }}</b></div>
+</div>
+
+<h2>История поломок</h2>
+{% if rows %}
+<div class="timeline">
+  {% for r in rows %}
+  <div class="tl-item {{ 'open' if r.is_now }}">
+    <div class="tl-dot k{{ r.KATEG }}"></div>
+    <div class="tl-body">
+      <div class="tl-head">
+        <span class="tl-date">{{ r.begin_txt }}</span>
+        <span class="badge" title="{{ ATYPE_HINTS.get(r.ALARM_TYPE, '') }}">{{ r.ALARM_TYPE }}</span>
+        <span class="badge k{{ r.KATEG }}">кат. {{ r.KATEG }}</span>
+        {% if r.is_now %}<span class="badge now">НВ — идёт</span>{% endif %}
+        {% if can('alarm_edit') %}<a class="tl-edit" href="{{ url_for('alarm_edit', alarm_id=r.ID, back=back) }}">изменить</a>{% endif %}
+      </div>
+      <div class="tl-text">{{ r.DESCR or r.DESC_NOTICE or '—' }}</div>
+      <div class="tl-meta">
+        <span>Окончание: <b>{{ r.end_txt }}</b></span>
+        <span>Длительность: <b>{{ r.length_txt or '—' }}</b></span>
+        <span>Простой БС: <b>{{ r.common_txt or '—' }}</b></span>
+        {% if r.PW.startswith('http') %}<a href="{{ r.PW }}" target="_blank" rel="noopener">заявка CRM</a>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}<div class="card empty">По этой станции аварий ещё не зарегистрировано.</div>{% endif %}
+{% endblock %}

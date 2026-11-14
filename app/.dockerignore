@@ -1,0 +1,16 @@
+# Не тащим в build context лишнее и секреты (MOT-002, MOT-056)
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.*
+!.env.example
+.git/
+.gitignore
+.DS_Store
+*.swp
+*.sqlite
+tests_cache/
+.pytest_cache/
+.venv/
+venv/

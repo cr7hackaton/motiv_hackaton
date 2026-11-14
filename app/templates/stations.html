@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Станции — Веб отчетность{% endblock %}
+{% block content %}
+<h1>Справочник базовых станций</h1>
+<form method="get" class="card filter">
+  <label class="grow">Поиск <input type="search" name="q" value="{{ q }}" placeholder="код или адрес БС" autofocus></label>
+  <button class="btn primary" type="submit">Найти</button>
+</form>
+
+<p class="muted">Найдено станций: <b>{{ rows|length }}</b>{% if q %} по запросу «{{ q }}»{% endif %}.</p>
+
+{% if rows %}
+<div class="table-wrap"><table>
+  <thead><tr><th>Код БС</th><th>Адрес</th><th>Направление</th><th>ТЦ</th><th>Тип сети</th><th>Оборудование</th><th>Аварий</th><th></th></tr></thead>
+  <tbody>
+  {% for s in rows %}
+  <tr>
+    <td class="nw"><b>{{ s.CODE }}</b></td>
+    <td>{{ s.ADDR }}</td>
+    <td>{{ s.NAPR }}</td>
+    <td>{{ s.TEHC }}</td>
+    <td>{{ s.NETW_TYPE }}</td>
+    <td>{{ s.EQIP_TYPE }}</td>
+    <td class="num">{% if counts.get(s.CODE) %}<span class="badge">{{ counts[s.CODE] }}</span>{% else %}<span class="muted">0</span>{% endif %}</td>
+    <td><a class="btn small" href="{{ url_for('station_card', code=s.CODE) }}">История →</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% else %}<div class="card empty">Станции не найдены.</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,25 @@
+# Секреты — в репозиторий не кладём (используйте .env.example как шаблон)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# ОС / редакторы
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Локальные данные/выгрузки
+*.sqlite
+*.log
+export*.csv
+
+# Брендовые изображения-заглушки (не распространяем). Официальный логотип
+# положите в app/static/ локально; в репозиторий кладём только нейтральную SVG-заглушку.
+app/static/logo-mark.png
+app/static/logo-full.png

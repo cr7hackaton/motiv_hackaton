@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Статистика — Веб отчетность{% endblock %}
+{% macro bars(items, accent='') %}
+  {% set maxv = (items|map('last')|max) if items else 1 %}
+  <div class="bars">
+  {% for label, val in items %}
+    <div class="bar-row">
+      <span class="bar-label" title="{{ label }}">{{ label }}</span>
+      <span class="bar-track"><span class="bar-fill {{ accent }}" style="width: {{ ((val*100.0/maxv))|round(0,'floor')|int }}%"></span></span>
+      <span class="bar-val">{{ val }}</span>
+    </div>
+  {% endfor %}
+  {% if not items %}<p class="muted">Нет данных за период.</p>{% endif %}
+  </div>
+{% endmacro %}
+{% block content %}
+<h1>Статистика</h1>
+<p class="muted">Показатели работы сети за период: <b>{{ label }}</b>. Считаются по реальным записям базы.</p>
+
+<div class="card filter stat-filter">
+  <div class="chips-row" style="margin:0">
+    <span class="templates-label">Период:</span>
+    {% for key, name, _ in presets %}
+      <a class="chip {{ 'on' if active == key }}" href="{{ url_for('stats', range=key) }}">{{ name }}</a>
+    {% endfor %}
+  </div>
+  <form method="get" class="stat-range">
+    <label>с <input type="date" name="from" value="{{ d_from }}"></label>
+    <label>по <input type="date" name="to" value="{{ d_to }}"></label>
+    <button class="btn {{ 'primary' if custom else '' }}" type="submit">Свой период</button>
+  </form>
+</div>
+
+<div class="stats kpi">
+  <div class="stat"><span>Всего событий</span><b>{{ total }}</b></div>
+  <div class="stat accent"><span>Открыто (НВ)</span><b>{{ open_n }}</b></div>
+  <div class="stat ok"><span>Закрыто</span><b>{{ closed_n }}</b></div>
+  <div class="stat"><span>Новых за период</span><b>{{ new_n }}</b></div>
+  <div class="stat"><span>Затронуто БС</span><b>{{ affected }}</b></div>
+  <div class="stat"><span>Суммарный простой БС</span><b>{{ total_prostoy }}</b></div>
+  <div class="stat"><span>Средняя длительность (закрытых)</span><b>{{ avg_len }}</b></div>
+</div>
+
+<div class="stat-grid">
+  <div class="card"><h2>По категориям</h2>{{ bars(by_kateg) }}</div>
+  <div class="card"><h2>По типам аварий</h2>{{ bars(by_type) }}</div>
+  <div class="card"><h2>По направлениям</h2>{{ bars(by_napr, 'b2') }}</div>
+  <div class="card"><h2>По ТЦ (топ)</h2>{{ bars(by_tehc, 'b2') }}</div>
+  <div class="card"><h2>По типу сети</h2>{{ bars(by_netw, 'b3') }}</div>
+  <div class="card">
+    <h2>Топ станций по числу аварий</h2>
+    {% if top_st %}
+    <div class="bars">
+      {% set m = (top_st|map('last')|max) %}
+      {% for code, val in top_st %}
+      <div class="bar-row">
+        <span class="bar-label"><a href="{{ url_for('station_card', code=code) }}">{{ code }}</a></span>
+        <span class="bar-track"><span class="bar-fill" style="width: {{ ((val*100.0/m))|round(0,'floor')|int }}%"></span></span>
+        <span class="bar-val">{{ val }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}<p class="muted">Нет данных за период.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

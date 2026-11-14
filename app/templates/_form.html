@@ -1,0 +1,139 @@
+{% macro select(name, label, values, form, hint='') -%}
+<label>{{ label }}<span class="req">*</span>
+  <select name="{{ name }}" required>
+    <option value="">— выберите —</option>
+    {% for v in values %}<option value="{{ v }}" {{ 'selected' if (form.get(name)|string) == (v|string) }}>{{ v }}</option>{% endfor %}
+  </select>
+  {% if hint %}<small>{{ hint }}</small>{% endif %}
+</label>
+{%- endmacro %}
+
+{% macro alarm_form(c, form, submit_label) %}
+<input type="hidden" name="csrf" value="{{ csrf_token() }}">
+<input type="hidden" name="STATION_CODE" id="STATION_CODE" value="{{ form.get('STATION_CODE','') }}">
+
+<section class="panel sec-1">
+  <div class="panel-head">
+    <span class="panel-icon">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </span>
+    <span class="panel-title">Классификация</span>
+    <span class="panel-step">Шаг 1 из 4</span>
+  </div>
+  <div class="grid">
+    <label class="w2">Номер PW/NTT
+      <input name="PW" value="{{ form.get('PW','') }}" maxlength="450" placeholder="Ссылка на заявку в CRM (необязательно)">
+      <small>Ссылка на PW/NTT из CRM. Необязательно — часть аварий заводится без неё</small>
+    </label>
+    {{ select('NAPR', 'Направление', c.NAPR, form) }}
+    {{ select('TEHC', 'ТЦ', c.TC, form) }}
+    {{ select('KATEG', 'Категория', c.KATEG, form) }}
+    {{ select('NETW_TYPE', 'Тип сети', c.NETW, form) }}
+    {{ select('ALARM_TYPE', 'Тип', c.ATYPE, form) }}
+    <label>Тип объекта
+      <select name="OBJ_TYPE">
+        {% set cur_obj = form.get('OBJ_TYPE') or 'Базовая станция' %}
+        {% for v in c.OBJ %}<option value="{{ v }}" {{ 'selected' if cur_obj == v }}>{{ v }}</option>{% endfor %}
+      </select>
+      <small>Что затронуто: станция или вышестоящий объект (контроллер, узел…)</small>
+    </label>
+    <label>Количество БС<span class="req">*</span>
+      <input name="NUMB_RBS" id="NUMB_RBS" value="{{ form.get('NUMB_RBS','') }}" required
+             pattern="^([1-9][0-9]{0,3}|10000|[СсCc])$" title="Число 1–10000 или С (сектор)" placeholder="кол-во станций">
+      <small>Сколько БС затронуто. Для контроллера/узла — число станций за ним (напр. 600). Или <b>С</b> — сектор</small>
+    </label>
+  </div>
+</section>
+
+<section class="panel sec-2">
+  <div class="panel-head">
+    <span class="panel-icon">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M5 22 12 8l7 14"/><path d="M8.5 16h7"/><circle cx="12" cy="4" r="2"/></svg>
+    </span>
+    <span class="panel-title">Объект и описание</span>
+    <span class="panel-step">Шаг 2 из 4</span>
+  </div>
+  <div class="grid">
+    <label class="w4 ac-field">Поиск БС в справочнике
+      <input id="station-search" autocomplete="off" placeholder="Начните вводить код или адрес БС — например, EKB или Сургут"
+             value="{{ form.get('STATION_CODE','') }}">
+      <small>Выберите станцию — адрес, направление, ТЦ, тип сети и оборудование заполнятся автоматически</small>
+      <div id="station-suggest" class="ac-suggest" hidden></div>
+      <span id="station-picked" class="ac-picked" {{ '' if form.get('STATION_CODE') else 'hidden' }}>Станция: <b>{{ form.get('STATION_CODE','') }}</b> <button type="button" id="station-clear" class="ac-clear" title="Сбросить привязку">×</button></span>
+    </label>
+    <label class="w4">Сетевой элемент, услуга
+      <textarea name="SERV_ELEM" id="SERV_ELEM" rows="2" maxlength="450" placeholder="Адрес(а) БС — из справочника или вручную">{{ form.get('SERV_ELEM','') }}</textarea>
+    </label>
+    <label class="w2">Тип оборудования
+      <input name="EQIP_TYPE" value="{{ form.get('EQIP_TYPE','') }}" maxlength="450">
+    </label>
+    <label class="w2">Описание (кратко)
+      <input name="DESCR" value="{{ form.get('DESCR','') }}" maxlength="450">
+    </label>
+  </div>
+</section>
+
+<section class="panel sec-3">
+  <div class="panel-head">
+    <span class="panel-icon">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>
+    </span>
+    <span class="panel-title">Время и простой</span>
+    <span class="panel-step">Шаг 3 из 4</span>
+  </div>
+  <div class="grid">
+    <label>Начало<span class="req">*</span>
+      <input type="datetime-local" step="1" name="BEGIN_TIME" id="BEGIN_TIME" value="{{ form.get('BEGIN_TIME','') }}" required>
+    </label>
+    <label>Окончание
+      <input type="datetime-local" step="1" name="END_TIME" id="END_TIME" value="{{ form.get('END_TIME','') }}">
+      <span class="check"><input type="checkbox" name="END_NOW" id="END_NOW" value="1" {{ 'checked' if form.get('END_NOW') == '1' or not form }}> НВ — авария продолжается</span>
+    </label>
+    <label>АКБ
+      <input name="AKB" value="{{ form.get('AKB','') }}" class="hms" placeholder="чч.мм.сс">
+      <small>Время работы от батарей</small>
+    </label>
+    <label>ГУ
+      <input name="DGU" value="{{ form.get('DGU','') }}" class="hms" placeholder="чч.мм.сс">
+      <small>Время работы от генератора</small>
+    </label>
+    <label>Время перерыва связи
+      <input name="PROSTOY" id="PROSTOY" value="{{ form.get('PROSTOY','') }}" class="hms" placeholder="чч.мм.сс">
+      <small>Среднее время простоя 1 БС</small>
+    </label>
+    <div class="calc-box">
+      <span>Длительность аварии</span>
+      <output id="LENGHT">—</output>
+      <small>Окончание (или сейчас) − начало</small>
+    </div>
+    <div class="calc-box">
+      <span>Общее время простоя БС</span>
+      <output id="COMMON_PROSTOY">—</output>
+      <small>Перерыв связи × количество БС</small>
+    </div>
+  </div>
+</section>
+
+<section class="panel sec-4">
+  <div class="panel-head">
+    <span class="panel-icon">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    </span>
+    <span class="panel-title">Уведомления и подробности</span>
+    <span class="panel-step">Шаг 4 из 4</span>
+  </div>
+  <div class="grid">
+    <label class="w2">Уведомление об аварии (Кому)
+      <textarea name="ALARM_WHO" rows="3" maxlength="450" placeholder="Кого и как уведомили">{{ form.get('ALARM_WHO','') }}</textarea>
+    </label>
+    <label class="w2">Подробное описание аварии
+      <textarea name="DESC_NOTICE" rows="3" maxlength="450">{{ form.get('DESC_NOTICE','') }}</textarea>
+    </label>
+  </div>
+</section>
+
+<div class="savebar">
+  <span class="muted"><span class="req">*</span> — обязательные поля</span>
+  <button class="btn primary" type="submit">{{ submit_label }}</button>
+</div>
+{% endmacro %}

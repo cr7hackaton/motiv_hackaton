@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Групповое закрытие — Веб отчетность{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>Групповое закрытие аварий</h1>
+  <a class="btn small" href="{{ url_for('alarms') }}">← К авариям</a>
+</div>
+<p class="muted">Восстановили питание/связь в районе? Отфильтруйте открытые аварии, отметьте нужные
+и закройте их <b>одним окончанием</b> сразу.</p>
+
+<form method="get" class="card filter">
+  <label>Направление
+    <select name="f_napr" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      {% for v in c.NAPR %}<option value="{{ v }}" {{ 'selected' if f.f_napr == v }}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>ТЦ
+    <select name="f_tehc" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      {% for v in c.TC %}<option value="{{ v }}" {{ 'selected' if f.f_tehc == v }}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Тип аварии
+    <select name="f_atype" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      {% for v in c.ATYPE %}<option value="{{ v }}" {{ 'selected' if f.f_atype == v }}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label class="grow">Поиск (адрес, PW, код БС) <input type="search" name="f_q" value="{{ f.f_q }}" placeholder="например, Сургут"></label>
+  <button class="btn primary" type="submit">Показать открытые</button>
+</form>
+
+<form method="post" id="close-form">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <input type="hidden" name="do" value="close">
+
+  <h2>Открытые аварии <span class="badge" id="sel-count">0</span> из {{ rows|length }}</h2>
+  {% if rows %}
+  <div class="bulk-tools">
+    <button type="button" class="btn small" id="sel-all">Выбрать все</button>
+    <button type="button" class="btn small" id="sel-none">Снять все</button>
+    <span class="muted">Отмеченные аварии будут закрыты.</span>
+  </div>
+  <div class="table-wrap bulk-list">
+    <table>
+      <thead><tr><th style="width:36px"><input type="checkbox" id="check-all" checked></th><th>ID</th><th>PW/NTT</th><th>Напр.</th><th>ТЦ</th><th>Кат.</th><th>Тип</th><th>Сетевой элемент</th><th>БС</th><th>Начало</th><th>Длится</th></tr></thead>
+      <tbody>
+      {% for r in rows %}
+        <tr class="open">
+          <td><input type="checkbox" class="cl-check" name="ids" value="{{ r.ID }}" checked></td>
+          <td>{{ r.ID }}</td><td class="pw">{{ r.PW }}</td><td>{{ r.NAPR }}</td><td>{{ r.TEHC }}</td>
+          <td><span class="badge k{{ r.KATEG }}">{{ r.KATEG }}</span></td><td>{{ r.ALARM_TYPE }}</td>
+          <td>{{ r.SERV_ELEM }}</td><td class="num">{{ r.numb_txt }}</td>
+          <td class="nw">{{ r.begin_txt }}</td><td class="num">{{ r.length_txt }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <section class="panel sec-1" style="margin-top:16px">
+    <div class="grid">
+      <label>Время окончания (для всех)<span class="req">*</span>
+        <input type="datetime-local" step="1" name="END_TIME" id="c_end" value="{{ form.get('END_TIME','') }}" required>
+        <small>Когда восстановили. По умолчанию — сейчас; можно указать задним числом</small>
+      </label>
+    </div>
+  </section>
+
+  <div class="savebar">
+    <span class="muted">Будет закрыто аварий: <b id="sel-count2">0</b></span>
+    <button class="btn primary" type="submit" id="close-submit" onclick="return confirm('Закрыть выбранные аварии?')">Закрыть выбранные</button>
+  </div>
+  {% else %}
+  <div class="card empty">Открытых аварий по фильтру нет.</div>
+  {% endif %}
+</form>
+
+<script>
+(function () {
+  'use strict';
+  var form = document.getElementById('close-form');
+  if (!form) return;
+  var checks = form.querySelectorAll('.cl-check');
+  var all = document.getElementById('check-all');
+  var c1 = document.getElementById('sel-count'), c2 = document.getElementById('sel-count2');
+  var submit = document.getElementById('close-submit');
+  function count() {
+    var n = 0;
+    for (var i = 0; i < checks.length; i++) if (checks[i].checked) n++;
+    if (c1) c1.textContent = n;
+    if (c2) c2.textContent = n;
+    if (submit) submit.disabled = (n === 0);
+    if (all) all.checked = (n === checks.length && n > 0);
+  }
+  function setAll(v) { for (var i = 0; i < checks.length; i++) checks[i].checked = v; count(); }
+  for (var i = 0; i < checks.length; i++) checks[i].addEventListener('change', count);
+  if (all) all.addEventListener('change', function () { setAll(all.checked); });
+  var sa = document.getElementById('sel-all'), sn = document.getElementById('sel-none');
+  if (sa) sa.addEventListener('click', function () { setAll(true); });
+  if (sn) sn.addEventListener('click', function () { setAll(false); });
+  var end = document.getElementById('c_end');
+  function pad(n){ return (n<10?'0':'')+n; }
+  if (end && !end.value) {
+    var d = new Date();
+    end.value = d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes())+':'+pad(d.getSeconds());
+  }
+  count();
+})();
+</script>
+{% endblock %}

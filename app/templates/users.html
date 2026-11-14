@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Пользователи — Веб отчетность{% endblock %}
+{% block content %}
+<h1>Пользователи</h1>
+
+{% if can('user_manage') %}
+<form method="post" class="card filter">
+  <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+  <input type="hidden" name="action" value="create">
+  <label>Логин <input name="login" required></label>
+  <label>ФИО <input name="full_name"></label>
+  <label>Пароль <input name="password" type="password" minlength="6" required></label>
+  <label>Должность
+    <select name="role">{% for k in assignable_roles() %}<option value="{{ k }}">{{ ROLES[k] }}</option>{% endfor %}</select>
+  </label>
+  <button class="btn primary" type="submit">Добавить</button>
+</form>
+{% else %}
+<p class="muted">Список сотрудников доступен для просмотра. Изменять роли, блокировать и менять
+чужие пароли может только <b>Владелец</b>. Свой пароль — на странице «Сменить пароль».</p>
+{% endif %}
+
+<h2>Список сотрудников</h2>
+<form method="get" class="card filter">
+  <label class="grow">Поиск по ФИО или логину
+    <input type="search" name="q" value="{{ filt.q }}" placeholder="например, Иванов или admin">
+  </label>
+  <label>Должность
+    <select name="role" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      {% for k, v in ROLES.items() %}<option value="{{ k }}" {{ 'selected' if filt.role == k }}>{{ v }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Статус
+    <select name="status" onchange="this.form.submit()">
+      <option value="">— все —</option>
+      <option value="active" {{ 'selected' if filt.status == 'active' }}>Активные</option>
+      <option value="blocked" {{ 'selected' if filt.status == 'blocked' }}>Заблокированные</option>
+    </select>
+  </label>
+  <button class="btn primary" type="submit">Найти</button>
+  {% if filt.q or filt.role or filt.status %}<a class="btn" href="{{ url_for('users') }}">Сбросить</a>{% endif %}
+</form>
+<p class="muted">Найдено: <b>{{ rows|length }}</b>{% if rows|length != total %} из {{ total }}{% endif %}.</p>
+
+<div class="table-wrap"><table>
+  <thead><tr><th>Логин</th><th>ФИО</th><th>Должность</th><th>Статус</th><th>Создан</th>{% if can('user_manage') %}<th>Пароль</th>{% endif %}</tr></thead>
+  <tbody>
+  {% for u in rows %}
+  {% set manage = can('user_manage') and can_manage_user(u.ROLE) and u.ID != session.uid %}
+  <tr class="{{ '' if u.IS_ACTIVE else 'muted' }}">
+    <td class="nw">{{ u.LOGIN }}</td><td>{{ u.FULL_NAME or '' }}</td>
+    <td>
+      {% if manage %}
+      <form method="post" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="role"><input type="hidden" name="id" value="{{ u.ID }}">
+        <select name="role" onchange="this.form.submit()">
+          {% for k in assignable_roles() %}<option value="{{ k }}" {{ 'selected' if u.ROLE == k }}>{{ ROLES[k] }}</option>{% endfor %}
+        </select>
+      </form>
+      {% else %}
+        <span class="badge {{ 'now' if u.ROLE == 'owner' }}">{{ ROLES[u.ROLE] }}</span>
+      {% endif %}
+    </td>
+    <td>
+      {% if manage %}
+      <form method="post" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="toggle"><input type="hidden" name="id" value="{{ u.ID }}">
+        <button class="btn small" type="submit">{{ 'Активен — заблокировать' if u.IS_ACTIVE else 'Заблокирован — включить' }}</button>
+      </form>
+      {% else %}
+        {{ 'Активен' if u.IS_ACTIVE else 'Заблокирован' }}
+      {% endif %}
+    </td>
+    <td class="nw">{{ u.CREATED_AT or '' }}</td>
+    {% if can('user_manage') %}
+    <td>
+      <form method="post" class="inline">
+        <input type="hidden" name="csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="password"><input type="hidden" name="id" value="{{ u.ID }}">
+        <input name="password" type="password" minlength="6" placeholder="от 6 символов" required>
+        <button class="btn small" type="submit">Сменить</button>
+      </form>
+    </td>
+    {% endif %}
+  </tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}

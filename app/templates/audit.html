@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Журнал действий</h1>
+<p class="muted">Последние 500 действий пользователей.</p>
+<div class="table-wrap"><table>
+  <thead><tr><th>Время</th><th>Пользователь</th><th>Действие</th><th>Авария</th><th>Детали</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+  <tr><td class="nw">{{ r.TS }}</td><td>{{ r.USER_LOGIN }}</td><td>{{ r.ACTION }}</td><td>{{ r.ALARM_ID or '' }}</td><td>{{ r.DETAILS }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div>
+{% endblock %}
