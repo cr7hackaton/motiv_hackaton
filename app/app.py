@@ -78,7 +78,7 @@ ROLES = {"owner": "Владелец", "admin": "Администратор",
 PERMISSIONS = {
     "alarm_create": {"owner", "admin", "duty"},
     "alarm_edit": {"owner", "admin", "duty"},
-    "alarm_delete": {"owner", "admin", "duty"},
+    "alarm_delete": {"owner", "admin"},  # дежурный только закрывает, удаляет администратор
     "report_view": {"owner", "admin", "duty", "engineer"},
     "report_export": {"owner", "admin", "duty", "engineer"},
     "user_view": {"owner", "admin"},     # видеть список сотрудников
