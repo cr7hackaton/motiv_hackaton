@@ -15,7 +15,7 @@
   <tbody>
   {% for s in rows %}
   <tr>
-    <td class="nw"><b>{{ s.CODE }}</b></td>
+    <td class="nw"><a href="{{ url_for('station_card', code=s.CODE) }}"><b>{{ s.CODE }}</b></a></td>
     <td>{{ s.ADDR }}</td>
     <td>{{ s.NAPR }}</td>
     <td>{{ s.TEHC }}</td>

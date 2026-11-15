@@ -56,8 +56,9 @@
   <div class="stat"><span>Событий по фильтру</span><b>{{ rows|length }}</b></div>
   <div class="stat accent"><span>Открыто (НВ)</span><b>{{ open_count }}</b></div>
   <div class="stat"><span>Затронуто БС (уникальных)</span><b>{{ stations_hit }}</b></div>
-  <div class="stat"><span>Суммарный простой БС</span><b>{{ total }}</b></div>
+  <div class="stat"><span>Суммарный простой БС, ч.мм.сс</span><b>{{ total }}</b></div>
 </div>
+<p class="muted">Открытые аварии (НВ) показываются всегда, независимо от периода — период ограничивает только закрытые. Колонки времени — в формате ч.мм.сс (часы без ограничения).</p>
 
 {% if rows %}
 <div class="table-wrap"><table class="report">

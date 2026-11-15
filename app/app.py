@@ -265,10 +265,11 @@ def parse_dt(value):
 
 
 def duration_sec(begin, end):
-    """Длительность аварии: (НВ ? сейчас : окончание) − начало."""
+    """Длительность аварии: (НВ ? сейчас : окончание) − начало.
+    Не может быть отрицательной (начало в будущем / окончание раньше начала)."""
     if begin is None:
         return None
-    return int(((end or datetime.now()) - begin).total_seconds())
+    return max(0, int(((end or datetime.now()) - begin).total_seconds()))
 
 
 def common_prostoy_sec(prostoy, numb):
@@ -380,6 +381,8 @@ def form_to_record(form):
         end = None if end_now else parse_dt(form.get("END_TIME"))
         if not end_now and end is None:
             errors.append("Укажите окончание аварии или отметьте «НВ»")
+        if begin and begin > datetime.now():
+            errors.append("Начало аварии не может быть в будущем")
         if begin and end and end < begin:
             errors.append("Окончание раньше начала")
     except ValueError as e:
@@ -646,6 +649,8 @@ def alarms_bulk():
             end = None if end_now else parse_dt(request.form.get("END_TIME"))
             if not end_now and end is None:
                 errors.append("Укажите окончание или отметьте «НВ»")
+            if begin and begin > datetime.now():
+                errors.append("Начало аварии не может быть в будущем")
             if begin and end and end < begin:
                 errors.append("Окончание раньше начала")
         except ValueError as e:
@@ -953,7 +958,8 @@ def reports_csv():
     audit("export", None, "%s..%s" % (d_from, d_to))
     # BOM — чтобы Excel корректно открыл кириллицу
     data = "﻿" + buf.getvalue()
-    return Response(data, mimetype="text/csv; charset=utf-8", headers={
+    # content_type задаётся целиком (mimetype добавил бы charset повторно)
+    return Response(data, content_type="text/csv; charset=utf-8", headers={
         "Content-Disposition": "attachment; filename=report_%s_%s.csv" % (d_from, d_to)})
 
 

@@ -35,15 +35,15 @@
   <div class="bulk-tools">
     <button type="button" class="btn small" id="sel-all">Выбрать все</button>
     <button type="button" class="btn small" id="sel-none">Снять все</button>
-    <span class="muted">Отмеченные станции получат аварию.</span>
+    <span class="muted">Отметьте станции, которые получат аварию (по умолчанию не выбрано ни одной).</span>
   </div>
   <div class="table-wrap bulk-list">
     <table>
-      <thead><tr><th style="width:36px"><input type="checkbox" id="check-all" checked></th><th>Код БС</th><th>Адрес</th><th>Напр.</th><th>ТЦ</th><th>Сеть</th></tr></thead>
+      <thead><tr><th style="width:36px"><input type="checkbox" id="check-all"></th><th>Код БС</th><th>Адрес</th><th>Напр.</th><th>ТЦ</th><th>Сеть</th></tr></thead>
       <tbody>
       {% for s in stations %}
         <tr>
-          <td><input type="checkbox" class="st-check" name="codes" value="{{ s.CODE }}" checked></td>
+          <td><input type="checkbox" class="st-check" name="codes" value="{{ s.CODE }}"></td>
           <td class="nw"><b>{{ s.CODE }}</b></td>
           <td>{{ s.ADDR }}</td>
           <td>{{ s.NAPR }}</td>

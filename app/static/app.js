@@ -85,7 +85,9 @@
 
     var b = parseLocal(begin.value);
     var e = endNow.checked ? new Date() : parseLocal(end.value);
-    length.textContent = (b && e) ? fmtHms((e - b) / 1000) : '—';
+    // Отрицательную длительность не показываем (начало в будущем / окончание раньше начала),
+    // но подсвечиваем поле как ошибочное.
+    length.textContent = (b && e) ? fmtHms(Math.max(0, (e - b) / 1000)) : '—';
     length.parentNode.classList.toggle('bad', !!(b && e && e < b));
 
     var p = parseHms(prostoy.value);
@@ -142,7 +144,9 @@
       setVal('NETW_TYPE', s.NETW_TYPE);
       setVal('EQIP_TYPE', s.EQIP_TYPE);
       hidden.value = s.CODE;
-      search.value = s.CODE + ' — ' + s.ADDR;
+      // Адрес у части станций уже начинается с кода — не дублируем префикс
+      var addr = s.ADDR || '';
+      search.value = (addr.indexOf(s.CODE) === 0) ? addr : (s.CODE + (addr ? ' — ' + addr : ''));
       if (picked) { picked.hidden = false; picked.querySelector('b').textContent = s.CODE; }
       hide();
     }
