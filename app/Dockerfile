@@ -15,4 +15,6 @@ RUN useradd -m -u 10001 appuser && chown -R appuser:appuser /srv
 USER appuser
 
 EXPOSE 8080
-CMD ["gunicorn", "-b", "0.0.0.0:8080", "-w", "2", "app:app"]
+# gthread: пустые соединения, которые браузер открывает «про запас», не занимают
+# обработчики. С синхронными воркерами два таких соединения подвешивали сайт на 30 с.
+CMD ["gunicorn", "-b", "0.0.0.0:8080", "-w", "2", "--worker-class", "gthread", "--threads", "8", "app:app"]
