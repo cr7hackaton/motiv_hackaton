@@ -112,7 +112,10 @@ docker-compose.yml       оркестрация: app + MariaDB 10.1
 .env.example             шаблон переменных (секреты в репозиторий не кладём)
 db/init.sql              схема БД
 app/
-  app.py                 сервер: маршруты, права, расчёты, SQL
+  app.py                 сервер: маршруты, права, расчёты
+  database.py            работа с MariaDB: подключение, запросы, настройка схемы
+  Dockerfile             образ приложения (Debian bookworm)
+  requirements.txt       зависимости Python
   templates/             HTML-шаблоны
   static/                style.css, app.js, logo-mark.svg
   tests.py               юнит-тесты
