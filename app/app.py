@@ -999,8 +999,8 @@ def csv_row_to_rec(cells, col):
         return cells[i].strip() if (i is not None and i < len(cells)) else ""
 
     begin = parse_dt_any(g("BEGIN_TIME"))
-    if begin is None:
-        return None, False                 # без начала строку не берём
+    if begin is None or begin > datetime.now():
+        return None, False                 # без начала или с началом в будущем не берём
 
     end_raw = g("END_TIME")
     end = None if (not end_raw or end_raw.upper() == "НВ") else parse_dt_any(end_raw)
@@ -1087,7 +1087,7 @@ def import_csv():
         label = "замена" if mode == "replace" else "добавление"
         msg = "Импорт (%s): загружено %d строк" % (label, len(recs))
         if bad:
-            msg += ", пропущено %d (без даты начала)" % bad
+            msg += ", пропущено %d (нет даты начала или она в будущем)" % bad
         flash(msg, "ok")
         return redirect(url_for("reports"))
     return render_template("import_csv.html")

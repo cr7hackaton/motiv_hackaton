@@ -261,7 +261,9 @@ tr.open td:first-child { box-shadow: inset 3px 0 0 var(--orange); }
 tr.muted td { color: var(--muted); }
 td.nw { white-space: nowrap; }
 td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-td.pw { max-width: 220px; word-break: break-all; }
+td.pw { max-width: 220px; word-break: break-word; }
+td.pw a { white-space: nowrap; }
+.btn .ico { vertical-align: -2px; }
 .badge { display: inline-block; padding: 1px 8px; border-radius: 10px; font-size: 11.5px; font-weight: 600; background: var(--badge-bg); color: var(--badge-fg); white-space: nowrap; }
 .badge.now { background: var(--chip-accent-bg); color: var(--chip-accent-fg); }
 .badge.k1 { background: var(--orange); color: #fff; }          /* 1 — критичная */

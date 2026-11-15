@@ -207,7 +207,11 @@
   if (form) {
     document.addEventListener('keydown', function (e) {
       if ((e.ctrlKey || e.metaKey) && (e.key === 'Enter')) {
+        // requestSubmit есть только с Chrome 76; клик по кнопке «Сохранить»
+        // в Chrome 75 так же запускает проверку обязательных полей.
+        var btn = form.querySelector('button[type="submit"], input[type="submit"]');
         if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else if (btn) btn.click();
         else form.submit();
       }
     });

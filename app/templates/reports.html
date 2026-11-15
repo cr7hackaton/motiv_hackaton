@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Отчетность — Веб отчетность{% endblock %}
+{% block title %}Отчётность — Веб отчётность{% endblock %}
 {% macro fsel(name, label, values, filt) -%}
 <label>{{ label }}
   <select name="{{ name }}" onchange="this.form.submit()">
@@ -9,7 +9,7 @@
 </label>
 {%- endmacro %}
 {% block content %}
-<h1>Отчетность</h1>
+<h1>Отчётность</h1>
 
 <form method="get" class="card filter">
   <label>Период с <input type="date" name="from" value="{{ d_from }}"></label>
@@ -76,7 +76,7 @@
         {% if r.is_now %}<form method="post" action="{{ url_for('alarm_close', alarm_id=r.ID) }}" class="inline" onsubmit="return confirm('Закрыть аварию №{{ r.ID }} сейчас?')"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="back" value="{{ back }}"><button class="btn small close" type="submit">Закрыть</button></form>{% endif %}
       </td>{% endif %}
       <td>{{ r.ID }}</td>
-      <td class="pw">{% if r.PW.startswith('http') %}<a href="{{ r.PW }}" target="_blank" rel="noopener">{{ r.PW }}</a>{% else %}{{ r.PW }}{% endif %}</td>
+      <td class="pw">{% if r.PW.startswith('http') %}<a href="{{ r.PW }}" target="_blank" rel="noopener" title="{{ r.PW }}">{{ r.PW.rstrip('/').split('/')[-1] }}</a>{% else %}{{ r.PW }}{% endif %}</td>
       <td class="nw">{% if r.STATION_CODE %}<a href="{{ url_for('station_card', code=r.STATION_CODE) }}">{{ r.STATION_CODE }}</a>{% endif %}</td>
       <td>{{ r.NAPR }}</td><td>{{ r.TEHC }}</td><td><span class="badge k{{ r.KATEG }}">{{ r.KATEG }}</span></td><td>{{ r.NETW_TYPE }}</td><td>{{ r.SERV_ELEM }}{% if r.OBJ_TYPE and r.OBJ_TYPE != 'Базовая станция' %} <span class="badge obj">{{ r.OBJ_TYPE }}</span>{% endif %}</td>
       <td class="num">{{ r.numb_txt }}</td><td>{{ r.EQIP_TYPE }}</td><td title="{{ ATYPE_HINTS.get(r.ALARM_TYPE, '') }}">{{ r.ALARM_TYPE }}</td><td>{{ r.DESCR }}</td>

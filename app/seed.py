@@ -40,6 +40,9 @@ NOTIFY = ["Инженеру ТЦ по телефону", "Группе эксп�
 
 def rec_for(station, begin, dur_sec, atype, kateg, numb, open_now, n):
     end = None if open_now else begin + timedelta(seconds=dur_sec)
+    now = datetime.now().replace(microsecond=0)
+    if end and end > now:
+        end = None                     # окончание ещё не наступило — авария открыта (НВ)
     prostoy = random.choice([5 * 60, 15 * 60, 30 * 60, 60 * 60, 90 * 60, 150 * 60])
     code, addr, napr, tehc, netw, eqip = station
     rec = {
@@ -51,11 +54,12 @@ def rec_for(station, begin, dur_sec, atype, kateg, numb, open_now, n):
         "AKB": to_sql_time(random.choice([None, 20 * 60, 45 * 60, 90 * 60])) if atype in ("ЭЛ", "АВР") else None,
         "DGU": to_sql_time(random.choice([None, 60 * 60, 120 * 60])) if atype in ("ЭЛ", "АВР") else None,
         "LENGHT": fmt_hms(duration_sec(begin, end)),
-        "PROSTOY": to_sql_time(prostoy),
-        "COMMON_PROSTOY": to_sql_time(common_prostoy_sec(prostoy, numb)),
+        "PROSTOY": fmt_hms(prostoy),
+        "COMMON_PROSTOY": fmt_hms(common_prostoy_sec(prostoy, numb)),
         "ALARM_WHO": random.choice(NOTIFY),
         "DESC_NOTICE": "Демо-запись для теста интерфейса.",
         "STATION_CODE": code,
+        "OBJ_TYPE": "Базовая станция",
     }
     return rec
 

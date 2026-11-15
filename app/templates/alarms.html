@@ -7,7 +7,7 @@
   <div class="toolbar">
     <a class="btn small" href="{{ url_for('alarms_bulk') }}" title="Одна авария сразу на много станций">⚡ Групповая авария</a>
     <a class="btn small" href="{{ url_for('alarms_bulk_close') }}" title="Закрыть много открытых аварий разом">✓ Групповое закрытие</a>
-    <a class="btn small" href="{{ url_for('alarms', dup='last') }}" title="Заполнить поля из последней аварии">⧉ Дублировать последнюю</a>
+    <a class="btn small" href="{{ url_for('alarms', dup='last') }}" title="Заполнить поля из последней аварии"><svg class="ico" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Дублировать последнюю</a>
     <a class="btn small ghost" href="{{ url_for('guide') }}">? Памятка дежурного</a>
   </div>
 </div>
@@ -36,7 +36,7 @@
         <a class="btn small" href="{{ url_for('alarm_edit', alarm_id=r.ID, back=request.path) }}">Изменить</a>
         <form method="post" action="{{ url_for('alarm_close', alarm_id=r.ID) }}" class="inline" onsubmit="return confirm('Закрыть аварию №{{ r.ID }} сейчас?')"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><input type="hidden" name="back" value="{{ request.path }}"><button class="btn small close" type="submit">Закрыть</button></form>
       </td>{% endif %}
-      <td>{{ r.ID }}</td><td class="pw">{{ r.PW }}</td><td>{{ r.NAPR }}</td><td>{{ r.TEHC }}</td><td><span class="badge k{{ r.KATEG }}">{{ r.KATEG }}</span></td>
+      <td>{{ r.ID }}</td><td class="pw">{% if r.PW.startswith('http') %}<a href="{{ r.PW }}" target="_blank" rel="noopener" title="{{ r.PW }}">{{ r.PW.rstrip('/').split('/')[-1] }}</a>{% else %}{{ r.PW }}{% endif %}</td><td>{{ r.NAPR }}</td><td>{{ r.TEHC }}</td><td><span class="badge k{{ r.KATEG }}">{{ r.KATEG }}</span></td>
       <td>{{ r.NETW_TYPE }}</td><td>{{ r.SERV_ELEM }}</td><td class="num">{{ r.numb_txt }}</td><td>{{ r.ALARM_TYPE }}</td>
       <td class="nw">{{ r.begin_txt }}</td><td class="num"><b>{{ r.length_txt }}</b></td>
     </tr>

@@ -18,7 +18,7 @@ Docker Compose. Интерфейс без внешних CDN, совместим
    docker compose up -d --build
    ```
    (первый запуск — 1–2 минуты: собирается образ и поднимается MariaDB 10.1.)
-3. Открыть в браузере: **http://localhost:8080**
+3. Открыть в браузере: **http://localhost** (порт 80; с другого компьютера — `http://<IP-сервера>`)
 4. Войти: логин **`admin`**, пароль **`admin`**.
 5. (по желанию) наполнить демо-данными — см. раздел «Демо-данные» ниже.
 
@@ -33,6 +33,14 @@ docker compose down -v       # остановить и удалить данны
 docker compose logs app --tail 50
 docker compose ps
 ```
+
+**Если порт 80 занят** (ошибка `port is already allocated` / `address already in use`) —
+запустить на другом порте и открыть http://localhost:8080:
+```bash
+APP_PORT=8080 docker compose up -d --build
+```
+Если занят порт 3306 (на машине уже стоит MySQL/MariaDB) — остановить локальную СУБД
+(`sudo systemctl stop mysql` / `mariadb`), т.к. по ТЗ база должна вещать на 3306.
 
 ---
 
@@ -126,7 +134,7 @@ docker compose exec -e SKIP_BOOTSTRAP=1 app python -m unittest tests -v
 ```
 
 Меры безопасности: CSRF на всех POST (включая вход), `HttpOnly`/`SameSite` cookie, запуск
-контейнера от непривилегированного пользователя, порт БД только на `127.0.0.1`, `.dockerignore`,
+контейнера от непривилегированного пользователя, `.dockerignore`,
 экранирование формул в CSV, проверка прав на сервере. Разбор внешнего аудита (57 пунктов) —
 в [ОТВЕТ_РЕЕСТР_ПРОБЛЕМ.md](ОТВЕТ_РЕЕСТР_ПРОБЛЕМ.md).
 
