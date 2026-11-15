@@ -919,6 +919,8 @@ def reports():
         ("Вчера", today - timedelta(days=1), today - timedelta(days=1)),
         ("7 дней", today - timedelta(days=6), today),
         ("Этот месяц", today.replace(day=1), today),
+        ("Год", today - timedelta(days=365), today),
+        ("Всё время", date(2000, 1, 1), today),
     )]
     problems = [(key, title, qs(problem=key, atype=None)) for key, (title, _) in PROBLEM_GROUPS.items()]
     stations_hit = len(set(r["STATION_CODE"] for r in rows if r["STATION_CODE"]))
@@ -1099,7 +1101,8 @@ def stats():
     presets = [("24h", "За 24 часа", now - timedelta(hours=24)),
                ("week", "Неделя", now - timedelta(days=7)),
                ("month", "Месяц", now - timedelta(days=30)),
-               ("year", "Год", now - timedelta(days=365))]
+               ("year", "Год", now - timedelta(days=365)),
+               ("all", "Всё время", datetime(2000, 1, 1))]
     rng = (request.args.get("range") or "").strip()
     d_from = (request.args.get("from") or "").strip()
     d_to = (request.args.get("to") or "").strip()
