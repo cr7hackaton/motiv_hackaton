@@ -1217,7 +1217,7 @@ def users():
                 audit("user_create", None, "%s (%s)" % (login_, role))
                 flash("Пользователь %s создан" % login_, "ok")
         # Для действий над чужой учёткой — проверяем уровень доступа
-        elif action in ("role", "toggle", "password"):
+        elif action in ("role", "toggle", "password", "delete"):
             if not target:
                 flash("Пользователь не найден", "error")
             elif uid == session["uid"] or not can_manage_user(target["ROLE"]):
@@ -1242,6 +1242,10 @@ def users():
                             (generate_password_hash(pwd), uid))
                     audit("user_password", None, "id=%s" % uid)
                     flash("Пароль изменен", "ok")
+            elif action == "delete":
+                execute("DELETE FROM users WHERE ID=%s", (uid,))
+                audit("user_delete", None, "id=%s" % uid)
+                flash("Пользователь удалён", "ok")
         return redirect(url_for("users"))
     # Фильтры списка: поиск по ФИО/логину, должность, статус
     filt = {k: (request.args.get(k) or "").strip() for k in ("q", "role", "status")}
